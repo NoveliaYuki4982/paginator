@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 )
 
 const MAX_BYTES = 4
@@ -28,20 +29,19 @@ func displayError(text string, err error) {
 	log.Fatal(err)
 }
 
-func writePage(file *os.File, buffer []byte, pageNumber uint32) {
-	if _, err := file.Seek(int64((pageNumber-1)*LINES_PER_PAGE*CHARACTERS_PER_LINE), 0); err != nil {
-		displayError(writeError, err)
-	}
+func writePage(file *os.File, buffer []byte, pageNumber uint32, waitGroup *sync.WaitGroup) {
+	
+	if _, err := file.Seek(int64((pageNumber-1)*LINES_PER_PAGE*CHARACTERS_PER_LINE), 0); err == nil {
 
-	if _, err := file.Write(buffer); err != nil {
-		displayError(writeError, err)
+		if _, err := file.Write(buffer); err == nil {
+			if err := binary.Write(file, binary.LittleEndian, uint8(END_OF_PAGE)); err == nil {
+				if err := binary.Write(file, binary.LittleEndian, pageNumber); err != nil {
+				displayError(writeError, err)
+				}
+			}
+		}
 	}
-	if err := binary.Write(file, binary.LittleEndian, uint8(END_OF_PAGE)); err != nil {
-		displayError(writeError, err)
-	}
-	if err := binary.Write(file, binary.LittleEndian, pageNumber); err != nil {
-		displayError(writeError, err)
-	}
+	defer waitGroup.Done()
 }
 
 func findLastSpace(buffer []byte, startRange int, endRange int) (int, error) {
@@ -118,6 +118,8 @@ func main() {
 	pageNumber := 1
 	offset := 0
 
+	waitGroup := sync.WaitGroup{}
+
 	output, err := os.Create("output.txt")
 	if err != nil {
 		displayError(writeError, err)
@@ -132,31 +134,29 @@ func main() {
 		}
 		_, err = io.ReadFull(input, buffer)
 		var offsetBuf int
-		if err == nil  || err == io.EOF || err == io.ErrUnexpectedEOF {
+		
+		if err == nil || err == io.EOF || err == io.ErrUnexpectedEOF {
 
 			beautifiedBuffer, offsetBuffer, err2 := beautify(buffer)
 			if err2 != nil {
 				displayError(writeError, err2)
 			}
 			offsetBuf = offsetBuffer
-			writePage(output, beautifiedBuffer, uint32(pageNumber))
-			
+			waitGroup.Add(1)
+			go writePage(output, beautifiedBuffer, uint32(pageNumber), &waitGroup)
+
 			if err == io.EOF || err == io.ErrUnexpectedEOF {
 				break
 			}
 		} else {
 			displayError(writeError, err)
 		}
-		
-		// Adapt byte array to our paramters and write it until there are no more chunks to read
-		
 
-		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			break
-		}
 		offset += offsetBuf
 		pageNumber++
 	}
 
-	fmt.Printf("File is ready")
+	waitGroup.Wait()
+
+	fmt.Println("File is ready")
 }
