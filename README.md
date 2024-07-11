@@ -11,8 +11,9 @@ This program receives a file with only one line as an input and returns an outpu
 ## Usage
 1. Open terminal: ``Ctrl+Alt+T``
 2. Clone this repository: ``git clone https://github.com/NoveliaYuki4982/paginator.git``
-3. Go to the folder: ``cd paginator``
-4. Execute program: ``go run paginator.go [filename]``
+3. Cope input file into folder: ``cp ./document.txt ./paginator``
+4. Go to the folder: ``cd paginator``
+5. Execute program: ``go run paginator.go [filename]``
 
 ### Example
 ``go run paginator.go document.txt``

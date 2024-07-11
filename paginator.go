@@ -54,7 +54,7 @@ func findLastSpace(buffer []byte, startRange int, endRange int) (int, error) {
 }
 
 func beautify(buffer []byte) ([]byte, int, error) {
-	buffBeauty := make([]byte, AVAILABLE_CHARACTERS_PER_PAGE)
+	buffBeauty := []byte{}
 	lastEndReading := 0
 
 	// Add new line at the end of each line of the page
@@ -73,54 +73,16 @@ func beautify(buffer []byte) ([]byte, int, error) {
 		i := 0
 		for i < CHARACTERS_PER_LINE-takenCharacters-1 {
 			if lastEndReading+i < pos {
-				buffBeauty[line*CHARACTERS_PER_LINE+i] = buffer[lastEndReading+i]
+				buffBeauty = append(buffBeauty, buffer[lastEndReading+i])
 			} else {
 				break
 			}
 			i++
 		}
-		buffBeauty[line*CHARACTERS_PER_LINE+i] = NEW_LINE
+		buffBeauty = append(buffBeauty, NEW_LINE)
 		lastEndReading = pos
 	}
 	return buffBeauty, lastEndReading, nil
-}
-
-func beautifyEnd(buffer []byte) ([]byte, int, error) {
-	buffBeauty := make([]byte, AVAILABLE_CHARACTERS_PER_PAGE)
-	lastEndReading := 0
-	finished := false
-	bytesWritten := 0
-
-	for line := 0; line < LINES_PER_PAGE && !finished; line++ {
-		takenCharacters := 0
-
-		pos, err := findLastSpace(buffer, lastEndReading, lastEndReading+CHARACTERS_PER_LINE-1-takenCharacters)
-		if err != nil {
-			return buffer, -1, err
-		}
-
-		i := 0
-		for i < CHARACTERS_PER_LINE-takenCharacters-1 {
-			if lastEndReading+i < pos {
-				
-				buffBeauty[line*CHARACTERS_PER_LINE+i] = buffer[lastEndReading+i]
-				if buffer[lastEndReading+i] == 0 {
-					break
-				}
-			}
-			i++
-			bytesWritten++
-		}
-		buffBeauty[line*CHARACTERS_PER_LINE+i] = NEW_LINE
-		bytesWritten++
-		lastEndReading = pos
-	}
-	fmt.Println(string(buffBeauty))
-
-	// Eliminate useless characters
-	finalBuff := buffBeauty[0:bytesWritten]
-
-	return finalBuff, lastEndReading, nil
 }
 
 func main() {
@@ -167,7 +129,7 @@ func main() {
 			if err == io.EOF || err == io.ErrUnexpectedEOF {
 				
 				// Adapt byte array to our paramters and write the remaining bytes
-				beautifiedBuffer, _, err2 := beautifyEnd(buffer)				
+				beautifiedBuffer, _, err2 := beautify(buffer)				
 				if err2 != nil {
 					displayError(writeError, err2)
 				}
