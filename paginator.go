@@ -56,9 +56,10 @@ func findLastSpace(buffer []byte, startRange int, endRange int) (int, error) {
 func beautify(buffer []byte) ([]byte, int, error) {
 	buffBeauty := []byte{}
 	lastEndReading := 0
+	finished := false
 
 	// Add new line at the end of each line of the page
-	for line := 0; line < LINES_PER_PAGE; line++ {
+	for line := 0; line < LINES_PER_PAGE && !finished; line++ {
 		takenCharacters := 0
 
 		if line == 24 {
@@ -74,12 +75,17 @@ func beautify(buffer []byte) ([]byte, int, error) {
 		for i < CHARACTERS_PER_LINE-takenCharacters-1 {
 			if lastEndReading+i < pos {
 				buffBeauty = append(buffBeauty, buffer[lastEndReading+i])
+			} else if buffer[lastEndReading+i] == 0 {
+				finished = true
+				break
 			} else {
 				break
 			}
 			i++
 		}
-		buffBeauty = append(buffBeauty, NEW_LINE)
+		if buffer[lastEndReading+i] != 0 {
+			buffBeauty = append(buffBeauty, NEW_LINE)
+		}
 		lastEndReading = pos
 	}
 	return buffBeauty, lastEndReading, nil
@@ -125,28 +131,29 @@ func main() {
 			log.Fatal(err)
 		}
 		_, err = io.ReadFull(input, buffer)
-		if err != nil {
-			if err == io.EOF || err == io.ErrUnexpectedEOF {
-				
-				// Adapt byte array to our paramters and write the remaining bytes
-				beautifiedBuffer, _, err2 := beautify(buffer)				
-				if err2 != nil {
-					displayError(writeError, err2)
-				}
+		var offsetBuf int
+		if err == nil  || err == io.EOF || err == io.ErrUnexpectedEOF {
 
-				writePage(output, beautifiedBuffer, uint32(pageNumber))
+			beautifiedBuffer, offsetBuffer, err2 := beautify(buffer)
+			if err2 != nil {
+				displayError(writeError, err2)
+			}
+			offsetBuf = offsetBuffer
+			writePage(output, beautifiedBuffer, uint32(pageNumber))
+			
+			if err == io.EOF || err == io.ErrUnexpectedEOF {
 				break
 			}
+		} else {
+			displayError(writeError, err)
 		}
 		
 		// Adapt byte array to our paramters and write it until there are no more chunks to read
-		beautifiedBuffer, offsetBuf, err := beautify(buffer)
-		if err != nil {
-			displayError(writeError, err)
+		
+
+		if err == io.EOF || err == io.ErrUnexpectedEOF {
+			break
 		}
-
-		writePage(output, beautifiedBuffer, uint32(pageNumber))
-
 		offset += offsetBuf
 		pageNumber++
 	}
