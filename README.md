@@ -19,10 +19,10 @@ This program receives a file with only one line as an input and returns an outpu
 ``go run paginator.go document.txt``
 
 ## Additional information
-- Page number occupies 1 unsigned integer (4 bytes), meaning the maximum number of pages allowed for this program is 2³²-1-
-- New line symbol occupies 1 byte (0x0A in ASCII)
-- Line 25 of each page has 5 less bytes of information (used up by end of page symbol + page number)
-- Lines 1-24 have 79 bytes of information from the original file, line 25 has only 75 bytes
+- Page number occupies 1 unsigned integer (4 bytes), meaning the maximum number of pages allowed for this program is 2³²-1.
+- New line symbol occupies 1 byte (0x0A in ASCII).
+- Line 25 of each page has 5 less bytes of information (used up by end of page symbol + page number).
+- Lines 1-24 have 79 bytes of information from the original file, line 25 has only 75 bytes.
 
 ## Logic flow
 
@@ -35,7 +35,7 @@ This program receives a file with only one line as an input and returns an outpu
 3. Adapt read bytes to the parameters requested:
    - Check if words are cut in each line. If so, we write it into the next line.
    - Update offset so we do not miss any word the next time we read from the input file.
-   - Does not include blank spaces
+   - Does not include blank spaces.
 4. Write in parallel:
    - Write each beautified chunk in parallel.
-   - Position for each chunk = position for each page = CHARACTERS_PER_LINE*LINES_PER_PAGE*(pageNumber-1) = 2000
+   - Position for each chunk = position for each page = CHARACTERS_PER_LINE*LINES_PER_PAGE*(pageNumber-1) = 2000*(pageNumber-1).
