@@ -30,10 +30,12 @@ This program receives a file with only one line as an input and returns an outpu
    - We can not read a file if it does not exist.
 2. Read chunk of input file:
    - We read chunks of 1995 characters and store them in a byte array, which is the maximum amount of characters that fits into one page.
-   - Offset is recalculated to not miss any word or cut it
+   - Offset is recalculated to not miss any word or cut it.
    - If chunk it bigger than the remaining bytes to read, we handle the error by using another function to beautify the byte array.
-3. Adapt byte array to our paramters and write it until there are no more chunks to read:
+3. Adapt read bytes to the parameters requested:
    - Check if words are cut in each line. If so, we write it into the next line.
-   - Update offset so we do not miss any word the next time we read from the input file
-4. Adapt byte array to our paramters and write the remaining bytes:
-   - It is different because this byte array will always have a shorter or equal length. This way, we make this byte array's size dynamic.
+   - Update offset so we do not miss any word the next time we read from the input file.
+   - Does not include blank spaces
+4. Write in parallel:
+   - Write each beautified chunk in parallel.
+   - Position for each chunk = position for each page = CHARACTERS_PER_LINE*LINES_PER_PAGE*(pageNumber-1) = 2000

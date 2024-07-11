@@ -31,15 +31,17 @@ func displayError(text string, err error) {
 
 func writePage(file *os.File, buffer []byte, pageNumber uint32, waitGroup *sync.WaitGroup) {
 	
-	if _, err := file.Seek(int64((pageNumber-1)*LINES_PER_PAGE*CHARACTERS_PER_LINE), 0); err == nil {
-
-		if _, err := file.Write(buffer); err == nil {
-			if err := binary.Write(file, binary.LittleEndian, uint8(END_OF_PAGE)); err == nil {
-				if err := binary.Write(file, binary.LittleEndian, pageNumber); err != nil {
-				displayError(writeError, err)
-				}
-			}
-		}
+	if _, err := file.Seek(int64((pageNumber-1)*LINES_PER_PAGE*CHARACTERS_PER_LINE), 0); err != nil {
+		displayError(writeError, err)
+	}
+	if _, err := file.Write(buffer); err != nil {
+		displayError(writeError, err)
+	}
+	if err := binary.Write(file, binary.LittleEndian, uint8(END_OF_PAGE)); err != nil {
+		displayError(writeError, err)
+	}
+	if err := binary.Write(file, binary.LittleEndian, pageNumber); err != nil {
+		displayError(writeError, err)
 	}
 	defer waitGroup.Done()
 }
@@ -117,7 +119,6 @@ func main() {
 
 	pageNumber := 1
 	offset := 0
-
 	waitGroup := sync.WaitGroup{}
 
 	output, err := os.Create("output.txt")
@@ -137,11 +138,14 @@ func main() {
 		
 		if err == nil || err == io.EOF || err == io.ErrUnexpectedEOF {
 
+			// Adapt read bytes to the parameters requested
 			beautifiedBuffer, offsetBuffer, err2 := beautify(buffer)
 			if err2 != nil {
 				displayError(writeError, err2)
 			}
 			offsetBuf = offsetBuffer
+
+			// Write in parallel
 			waitGroup.Add(1)
 			go writePage(output, beautifiedBuffer, uint32(pageNumber), &waitGroup)
 
